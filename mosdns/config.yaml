@@ -1,0 +1,53 @@
+log:
+  level: info
+
+plugins:
+  - tag: cache
+    type: cache
+    args:
+      size: 2048
+
+  - tag: mihomo_dns
+    type: forward
+    args:
+      upstreams:
+        - addr: 127.0.0.1:1053
+
+  - tag: china_dns
+    type: forward
+    args:
+      upstreams:
+        - addr: 223.5.5.5
+        - addr: 119.29.29.29
+        - addr: 114.114.114.114
+
+  - tag: main
+    type: sequence
+    args:
+      - exec: $cache
+      - matches:
+          - has_resp
+        exec: accept
+      - matches:
+          - qname pub.3gppnetwork.org
+        exec: $mihomo_dns
+      - matches:
+          - qname &/etc/mosdns/geosite_cn.txt
+        exec: $china_dns
+      - matches:
+          - qname &/etc/mosdns/direct_domains.txt
+        exec: $china_dns
+      - matches:
+          - has_resp
+        exec: accept
+      - exec: $mihomo_dns
+      - exec: accept
+
+  - type: udp_server
+    args:
+      entry: main
+      listen: 0.0.0.0:53
+  - type: tcp_server
+    args:
+      entry: main
+      listen: 0.0.0.0:53

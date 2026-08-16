@@ -1,0 +1,14 @@
+[Unit]
+Description=Refresh gateway subscription and rulesets
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/gateway/config.env
+ExecStart=/usr/bin/python3 /etc/gateway/convert.py
+ExecStartPost=/usr/bin/systemctl try-restart mihomo
+ExecStartPost=/usr/bin/systemctl try-restart mosdns
+
+[Install]
+WantedBy=timers.target
